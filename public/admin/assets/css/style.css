@@ -1,0 +1,21 @@
+.swal2-container {
+    z-index: 9999 !important;
+}
+
+button.tambah-dusun:hover{
+    background-color: rgb(17, 155, 247);
+    color: white;
+}
+
+button.tambah-komoditi:hover{
+    background-color: rgb(17, 155, 247);
+    color: white;
+}
+
+.login {
+    background-image: url('../../../image/login/agri.jpg'); /* Sesuaikan path gambar */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh; /* Biar full layar */
+}
