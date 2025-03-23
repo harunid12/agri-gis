@@ -47,30 +47,50 @@ class LahanController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'koordinat_poligon' => 'required',
-            'id_dusun' => 'required',
-            'id_komoditas' => 'required',
-            'alamat_lahan' => 'required|max:255',
-            'luas_lahan' => 'required',
-        ]);
+{
+    $request->validate([
+        'koordinat_poligon' => 'required',
+        'id_dusun' => 'required',
+        'id_komoditas' => 'required',
+        'alamat_lahan' => 'required|max:255',
+        'luas_lahan' => 'required',
+    ]);
 
-        $rawKoordinat = $request->input('koordinat_poligon'); 
-        $lines = explode("\n", trim($rawKoordinat)); 
-        $polygonPoints = [];
+    // Debug untuk memastikan request data benar
+    // dd($request->all());
 
-        foreach ($lines as $line) {
-            $coords = explode(',', trim($line)); 
-            if (count($coords) == 2) {
-                $lat = trim($coords[0]);
-                $lng = trim($coords[1]);
-                $polygonPoints[] = "$lng $lat"; 
+    $rawKoordinat = $request->input('koordinat_poligon'); 
+    $lines = explode("\n", trim($rawKoordinat)); 
+    $polygonPoints = [];
+
+    foreach ($lines as $index => $line) {
+        $coords = explode(',', trim($line)); 
+        if (count($coords) == 2) {
+            $lat = trim($coords[0]);
+            $lng = trim($coords[1]);
+
+            // Pastikan nilai latitude dan longitude tidak kosong
+            if (!is_numeric($lat) || !is_numeric($lng)) {
+                dd("Error parsing line $index: ", $line, $coords);
             }
+
+            $polygonPoints[] = "$lng $lat"; 
+        } else {
+            dd("Format error di line $index: ", $line, $coords);
         }
+    }
 
-        $polygonString = 'POLYGON((' . implode(',', $polygonPoints) . '))';
+    // Pastikan poligon tertutup (titik pertama dan terakhir harus sama)
+    if (!empty($polygonPoints) && $polygonPoints[0] !== end($polygonPoints)) {
+        $polygonPoints[] = $polygonPoints[0];
+    }
 
+    // Debug untuk memastikan hasil array sebelum diubah ke string
+    // dd($polygonPoints);
+
+    $polygonString = 'POLYGON((' . implode(',', $polygonPoints) . '))';
+
+    try {
         Lahan::create([
             'koordinat_poligon' => DB::raw("ST_GeomFromText('$polygonString')"),
             'id_dusun' => $request->id_dusun,
@@ -78,14 +98,18 @@ class LahanController extends Controller
             'alamat_lahan' => $request->alamat_lahan,
             'luas_lahan' => $request->luas_lahan,
         ]);
-
-        return back()->with('toast_success', 'Lahan Berhasil Ditambah!');
+    } catch (\Exception $e) {
+        return back()->withErrors(['error' => 'Gagal menyimpan data: ' . $e->getMessage()]);
     }
+
+    return back()->with('toast_success', 'Lahan Berhasil Ditambah!');
+}
+
 
     public function update(Request $request)
     {
         $lahan = Lahan::findOrFail($request->idLahan);
-        // dd($request->all());
+
         $request->validate([
             'koordinat_poligon' => 'required',
             'id_dusun' => 'required',
@@ -94,24 +118,35 @@ class LahanController extends Controller
             'luas_lahan' => 'required',
         ]);
 
+        // Ambil koordinat poligon dari request
         $rawKoordinat = $request->input('koordinat_poligon'); 
-        $lines = explode("\n", trim($rawKoordinat)); 
+        $lines = preg_split('/\r\n|\r|\n/', trim($rawKoordinat)); 
         $polygonPoints = [];
 
         foreach ($lines as $line) {
-            $coords = explode(' ', trim($line)); 
+            $coords = explode(',', trim($line)); 
             if (count($coords) == 2) {
-                $lng = trim($coords[0]);
-                $lat = trim($coords[1]);
-                $polygonPoints[] = "$lng $lat"; 
+                $lat = trim($coords[0]);
+                $lng = trim($coords[1]);
+
+                // Pastikan koordinat adalah angka
+                if (is_numeric($lat) && is_numeric($lng)) {
+                    $polygonPoints[] = "$lng $lat"; // Format yang benar (long lat)
+                }
             }
         }
 
-        // Pastikan poligon tertutup
-        if (!empty($polygonPoints) && $polygonPoints[0] !== end($polygonPoints)) {
+        // Cek apakah poligon sudah terbentuk
+        if (empty($polygonPoints)) {
+            return back()->withErrors(['error' => 'Format koordinat poligon tidak valid']);
+        }
+
+        // Pastikan poligon tertutup (titik awal = titik akhir)
+        if ($polygonPoints[0] !== end($polygonPoints)) {
             $polygonPoints[] = $polygonPoints[0];
         }
 
+        // Bentuk POLYGON WKT
         $polygonString = 'POLYGON((' . implode(',', $polygonPoints) . '))';
 
         try {

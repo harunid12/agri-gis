@@ -73,7 +73,7 @@
         <form action="{{ route('simpanLahan') }}" method="POST">
           @csrf
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel1">Tambah Komoditas</h5>
+          <h5 class="modal-title" id="exampleModalLabel1">Tambah Lahan</h5>
           <button
             type="button"
             class="btn-close"
