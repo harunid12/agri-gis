@@ -6,7 +6,7 @@
         <script>
           document.write(new Date().getFullYear());
         </script>
-        , made with ❤️ by AISEE Project
+        , made with ❤️ by AISE Project
       </div>
     </div>
   </footer>
