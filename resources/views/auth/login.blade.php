@@ -112,7 +112,7 @@
                 <div class="mb-3 form-password-toggle">
                   <div class="d-flex justify-content-between">
                     <label class="form-label" for="password">Password</label>
-                    <a href="https://wa.me/6289630535404">
+                    <a href="#">
                       <small>Forgot Password?</small>
                     </a>
                   </div>

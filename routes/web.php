@@ -19,7 +19,7 @@ use App\Http\Controllers\UserController;
 |
 */
 Route::middleware('guest')->group(function(){
-    Route::get('/login', [AuthController::class, 'login'])->name('login');
+    Route::get('/', [AuthController::class, 'login'])->name('login');
     Route::post('/auth', [AuthController::class, 'authenticate'])->name('auth');
 });
 
